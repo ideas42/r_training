@@ -1,0 +1,661 @@
+---
+title: "Introduction to R"
+subtitle: "A crash course"  
+author: 
+  - "i42 Testing Team"
+date: '`r Sys.Date()`'
+output:
+  xaringan::moon_reader:
+    self_contained: true
+    css: xaringan-themer.css
+    nature:
+      slideNumberFormat: "%current%"
+      highlightStyle: github
+      highlightLines: true
+      ratio: 16:9
+      countIncrementalSlides: true
+---
+
+```{r setup, include=FALSE}
+options(htmltools.dir.version = FALSE)
+knitr::opts_chunk$set(
+  #fig.width=9, fig.height=3.5, fig.retina=3,
+  #out.width = "100%",
+  cache = FALSE,
+  echo = TRUE,
+  message = FALSE, 
+  warning = FALSE,
+  fig.show = TRUE,
+  hiline = TRUE
+)
+library(here)
+library(tidyverse)
+library(hrbrthemes)
+library(wesanderson)
+library(kableExtra)
+library(viridis)
+library(palmerpenguins)
+library(gapminder)
+library(ggiraph)
+library(tools42)
+
+
+```
+
+```{r xaringan-themer, include=FALSE, warning=FALSE}
+library(xaringanthemer)
+style_mono_accent(
+  base_color = "#1c8a70",
+  header_font_google = google_font("Josefin Sans"),
+  #text_font_google   = google_font("Montserrat", "300", "300i"),
+  code_font_google   = google_font("Fira Mono")
+  #background_color = "#FFFFFF",
+  #text_color = "#3c3e3e",
+  #link_color = "#BED73C"
+)
+
+# This is the recommended set up for flipbooks
+# you might think about setting cache to TRUE as you gain practice --- building flipbooks from scratch can be time consuming
+knitr::opts_chunk$set(#fig.width = 6, 
+                      comment = "")
+library(flipbookr)
+
+```
+
+
+```{r xaringan-tile-view, echo=FALSE}
+
+xaringanExtra::use_xaringan_extra(c("tile_view", "panelset"))
+
+```
+
+# What we're covering today
+
+- What is **R** and what can you do with it?
+
+- The **basics**: data structures!
+
+- Importing and **wrangling** your data
+
+- A tiny bit of **plotting** if we have time
+
+
+---
+name: colors
+
+
+# Disclaimer
+
+Note that **all of this is new**. If you have any feedback or have thoughts on other specific trainings we could cover, you know where I live (virtually).
+
+---
+
+# What is R?
+
+- R was a language for statistical computing and graphics, but it's grown to be much more than that.
+
+- In that sense it's like Stata. Who's been to the Stata training?
+
+--
+
+.panelset[
+.panel[.panel-name[What's similar?]
+
+## Things that are similar
+
+- You open datasets
+- You wrangle data
+- You analyze it
+- You report results
+
+]
+.panel[.panel-name[What's different?]
+
+### Things that are different
+
+- You can have multiple datasets
+- You have an actual programming language
+- You have incredible flexibility
+- The world is your oyster (see this prez)
+
+]
+]
+
+---
+
+## E.g. Bill depth and bill length are correlated in penguins
+
+```{r, echo = FALSE}
+
+
+
+p <- penguins %>%
+  mutate(id = row_number(),
+         tooltip = paste("I'm a", species, "penguin from", island, "island")) %>%
+  ggplot(aes(x = bill_length_mm,
+             y = bill_depth_mm,
+             color = species)) +
+  geom_point_interactive(aes(tooltip = tooltip, data_id = id ), alpha = 0.5, size = 2.5) +
+  geom_smooth(method = 'lm') +
+  theme_ipsum_tw() +
+  scale_color_manual(values = wes_palette("Darjeeling1")) +
+  facet_wrap(~island)
+  
+
+girafe(code = print(p), width_svg = 12, height_svg = 5)
+
+```
+
+
+---
+class: inverse center middle
+
+## What about RStudio?
+
+Rstudio is the most commonly used IDE (integrated development environment) for programming with R
+
+Link to download: https://www.rstudio.com/products/rstudio/download/
+
+---
+
+## Before we start
+
+`R` works with packages. Packages **expand the universe of things** you can do with `R`, often in spectacular fashion. 
+
+- To keep things simple, we'll just be installing the `tidyverse` family of packages, and the `gapminder` package, which we'll be using to explore the gapminder dataset.
+
+- To install these, just run these two commands in the console:
+
+```{r, eval= FALSE}
+
+install.packages("tidyverse")
+install.packages("gapminder")
+
+```
+
+- You only need to install packages once in your computer. Once you do that, you can just load them when you need it (typically at the beginning.
+
+```{r, eval = FALSE}
+
+library(tidyverse)
+library(gapminder)
+
+```
+
+---
+
+# Data types
+
+The most basic data structure in R is a vector.
+
+- Vectors have one dimension (think of it as a line)
+
+- Vectors can be **numeric**, **character**,  **logical**...
+
+- But they must all share the same type!
+
+Here are some examples:
+
+```{r}
+#You can create a vector by using the assignment operator
+my_letters <- c("a", "b", "c")
+
+my_numbers <- c(1,2,3)
+
+# Now let's see what happens if we mix
+all_mixed <-c("a", 2, "b", 3)
+
+```
+
+---
+
+## A vector is a vector is a data frame
+
+And what's a dataset? It's just a bunch of **vectors** stuck together, vertically.
+
+```{r}
+
+sheep_name <- c("Molly", "Polly", "Dolly")
+sheep_weight <- c(120, 90, 85)
+sheep_age <- c(3,4,2)
+
+my_sheep <- data.frame(sheep_name, sheep_weight, sheep_age)
+
+```
+
+Let's print it out:
+
+```{r}
+
+my_sheep
+
+```
+
+---
+
+## Data importing and wrangling
+
+- We don't always build datasets this way, but it's useful as a **mental model**.
+
+- Typically we do just like in Stata, and we **read in** some data.
+
+- To do that, we will use the family of `read_*` functions available as part of the `tidyverse`. You'll find an example at the end of your script, to look at post-training.
+
+- For our training, we'll just use the `gapminder` dataset, which we can call using `data(gapminder)`, since it's already installed with the package.
+
+```{r}
+
+data(gapminder)
+
+```
+
+Can you all see it?
+
+---
+## Let's talk grammar
+
+There are several verbs available for data wrangling. We'll take a look at these:
+
+- `select()`
+- `filter()`
+- `mutate()`
+- `arrange()`
+- `summarize()`
+- `group_by()`
+
+With these 6 tools, you should be able to do about 90% of the things you want to do when wrangling data.
+---
+
+class: inverse center middle
+
+### For the other 10%: Google + Stackoverflow are your friends.
+
+![dog](no_idea.gif)
+
+---
+
+## Taking a look 
+
+Let's take a look at our dataset. You can look at the first 5 observations by using `head()`:
+
+```{r}
+
+head(gapminder)
+
+```
+
+---
+
+## Taking a look 
+
+You can also use `summary()` to get an overview of the dataset:
+
+```{r}
+
+summary(gapminder)
+
+```
+
+---
+
+## Select variables and filter observations
+
+Use `select` to pick and choose **variables**, and `filter` to pick and choose **observations**.
+
+A great thing in `R` is that you don't lose your data. You can just create a **new, updated object.**
+
+Let's keep only the `country`, `year`, and `lifeExp` variables.
+
+```{r}
+
+df_redux <- select(gapminder, country, year, lifeExp)
+
+head(df_redux)
+
+```
+
+
+---
+
+## Select variables and filter observations
+
+Now let's try using `filter()`. You can filter by any condition! Here we'll filter by year and country.
+
+```{r}
+
+df_filtered <- filter(gapminder, year == 1957, country == "Belgium")
+
+df_filtered
+```
+---
+
+## You can also combine these easily
+
+.pull-left[
+
+- Enter the pipe: `%>%`
+
+- Think of the pipe as "...and then..."
+
+- The pipe allows you to chain operations, and will make your life easier
+
+- Let's try filtering by continent and year, and keeping three variables:
+
+```{r}
+
+gapminder %>%
+  filter(continent == "Oceania", year == 2007) %>%
+  select(continent, country, lifeExp)
+
+```
+
+]
+
+.pull-right[
+```{r, echo=FALSE, out.width="70%", fig.cap="This is not a pipe.", fig.align='center'}
+knitr::include_graphics("pipe.jpeg")
+```
+]
+
+
+
+
+---
+
+## Reference: `select()`
+
+Select by column name:
+
+```{r, eval = FALSE}
+gapminder %>%
+  select(country)
+```
+
+Select by column position:
+
+```{r, eval = FALSE}
+gapminder %>%
+  select(1:2)
+```
+
+Select all columns except the first:
+
+```{r, eval = FALSE}
+gapminder %>%
+  select(-1)
+```
+
+---
+
+## Mutate to create (or change) variables
+
+- We don't have a GDP variable! Let's create it by multiplying GDP per capita times the population, and save it as a new dataframe.
+
+```{r}
+
+df_gdp <- gapminder %>%
+  mutate(gdp = pop * gdpPercap)
+
+```
+Ok, that's quite big. We could also divide it by 1,000,000 to have it in US$ million, or even take the log!
+
+```{r}
+
+df_gdp <- df_gdp %>%
+  mutate(gdp_million = gdp / 1000000,
+         gdp_log = log(gdp))
+
+```
+
+---
+
+## Arrange to sort your dataframes
+
+- Let's see what was the country with the lowest life expectancy in 1957:
+
+```{r}
+
+gapminder %>%
+  filter(year == 1957) %>%
+  arrange(lifeExp) %>%
+  head(3) # You can use head to restrict the output to any number of observations
+
+```
+
+What about the highest?
+
+```{r}
+
+gapminder %>%
+  filter(year == 1957) %>%
+  arrange(desc(lifeExp)) %>%
+  head(3)
+
+df_2007 <- gapminder %>%
+  filter(year == 2007)
+```
+
+---
+
+## Summarize your data
+
+- Very often, we're interested in calculating means, counts, medians, standard deviations.
+
+- These are all **summary stats** and we can calculate them with `summarize()`.
+
+- For example, imagine we're interested in the mean, median, and sd of life expectancy in 2007:
+
+```{r}
+
+gapminder %>%
+  filter(year == 2007) %>%
+  summarize(exp_mean = mean(lifeExp),
+            exp_median = median(lifeExp),
+            exp_sd = sd(lifeExp))
+
+```
+
+
+---
+
+## Groups of things
+
+- But more often, we care about summarizing across groups! This comes up all the time in our work.
+
+- For example, 
+
+```{r}
+
+df_2007 %>%
+  group_by(continent) %>%
+  summarize(exp_mean = mean(lifeExp),
+            gdp_mean = mean(gdpPercap))
+
+```
+
+- Note that `group_by()` doesn't produce any output, it just groups things in advance of whatever operation comes afterwards (typically, `summarize()`
+
+---
+
+## Reference: Other useful wrangling functions
+
+- `distinct()` to select unique rows from a data frame
+
+- `top_n()` to filter the top n observations (you can use it in combination
+with `arrange()`)
+
+- `ntile()` ranks values into the number of groups you provide
+
+- `rename()` to change the name of the variables in your data frame
+
+- All functions: https://dplyr.tidyverse.org/reference/index.html
+
+---
+class: inverse middle center
+
+# Plotting
+
+
+---
+
+## The grammar of graphics
+
+.pull-left[
+
+- **Reminder**: Always, always, ALWAYS plot your data. Please.
+
+- The most popular (and coolest) plotting library in R is `ggplot2`. It follows principles based on the **grammar of graphics**
+
+- What you should remember about this is that a plot is based on different layers that can be combined to create pretty much everything.
+
+- Let's look at a basic example.
+
+]
+
+.pull-right[
+```{r, echo=FALSE, fig.cap="A plot is like an onion."}
+knitr::include_graphics("gog.png")
+```
+]
+---
+
+## Plotting with `ggplot2`
+
+.pull-left[
+
+### Mappings and geoms
+
+- The two crucial starting points are the `aesthetic mappings` and the `geoms`. These tell your graph what variables are mapped to what, and what geometry we're going to use to represent them.
+- For two variables, a scatterplot is common:
+
+```{r, eval = FALSE}
+
+gapminder %>%
+  filter(year == 1982) %>%
+  ggplot(aes(x = gdpPercap, #<< 
+             y = lifeExp)) + #<< 
+  geom_point() #<< 
+
+```
+]
+
+.pull-right[
+```{r, echo=FALSE}
+
+gapminder %>%
+  filter(year == 1982) %>%
+  ggplot(aes(x = gdpPercap, y = lifeExp)) +
+  geom_point()
+
+```
+]
+
+---
+
+## Plotting with `ggplot2`
+
+.pull-left[
+
+### Adding a geom
+
+- But just playing around with things, we can get very different results.
+- We can add a geometry that shows a smooth line (or a linear model). 
+
+```{r, eval = FALSE}
+
+gapminder %>%
+  filter(year == 1982) %>%
+  ggplot(aes(x = gdpPercap, 
+             y = lifeExp)) +
+  geom_point() +
+  geom_smooth() #<< 
+
+```
+]
+
+.pull-right[
+```{r, echo=FALSE}
+
+gapminder %>%
+  filter(year == 1982) %>%
+  ggplot(aes(x = gdpPercap, y = lifeExp)) +
+  geom_point() +
+  geom_smooth()
+
+```
+]
+
+---
+
+## Plotting with `ggplot2`
+
+.pull-left[
+
+### Adding a geom
+
+- We can also add an aesthetic to encode continent as color.
+
+```{r, eval = FALSE}
+
+gapminder %>%
+  filter(year == 1982) %>%
+  ggplot(aes(x = gdpPercap, 
+             y = lifeExp, 
+             color = continent)) + #<< 
+  geom_point()
+
+```
+]
+
+.pull-right[
+```{r, echo=FALSE}
+
+gapminder %>%
+  filter(year == 1982) %>%
+  ggplot(aes(x = gdpPercap, 
+             y = lifeExp, 
+             color = continent)) +
+  geom_point()
+
+```
+]
+
+
+---
+
+class: inverse center middle
+
+## Anatomy of a ggplot
+
+---
+
+`r chunk_reveal("my_gap")`
+
+```{r my_gap, include = FALSE}
+
+gapminder %>%
+  filter(year == 1982) %>%
+  ggplot() +
+  aes(x = gdpPercap) +
+  aes(y = lifeExp) +
+  geom_point() +
+  aes(color = continent) +
+  aes(size = pop) +
+  theme_ipsum_tw() +
+  labs(title = "Income and life expectancy in 1982",
+       x = "GDP per capita",
+       y = "Life expectancy",
+       color = "Continent",
+       size = "Population") +
+  scale_color_manual(values = palette_42("i42_bright"))
+
+
+```
+
+---
+
+class: inverse center middle
+
+# Thank you!
+
+
