@@ -94,7 +94,7 @@ Note that **all of this is new**. If you have any feedback or have thoughts on o
 
 - R was a language for statistical computing and graphics, but it's grown to be much more than that.
 
-- In that sense it's like Stata. Who's been to the Stata training?
+- In that sense it's similar to Stata and other statistical computing programs like SPSS or SAS. BUT there's other stuff too. 
 
 --
 
@@ -116,7 +116,7 @@ Note that **all of this is new**. If you have any feedback or have thoughts on o
 - You can have multiple datasets
 - You have an actual programming language
 - You have incredible flexibility
-- The world is your oyster (see this prez)
+- The world is your oyster 
 
 ]
 ]
@@ -148,7 +148,7 @@ girafe(code = print(p), width_svg = 12, height_svg = 5)
 
 
 ---
-class: inverse center middle
+class: center middle
 
 ## What about RStudio?
 
