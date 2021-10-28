@@ -86,7 +86,9 @@ name: colors
 
 # Disclaimer
 
-Note that **all of this is new**. If you have any feedback or have thoughts on other specific trainings we could cover, you know where I live (virtually).
+Note that **all of this is new**. If you have any feedback or have thoughts on other specific trainings we could cover, **please reach out**.
+
+**Citation:** Some of the content and examples in this presentation were inspired by my good friend [Ariane Aumaitre's](https://github.com/aaumaitre) training materials.  
 
 ---
 
@@ -101,7 +103,7 @@ Note that **all of this is new**. If you have any feedback or have thoughts on o
 .panelset[
 .panel[.panel-name[What's similar?]
 
-## Things that are similar
+### Things that are similar
 
 - You open datasets
 - You wrangle data
@@ -387,16 +389,50 @@ gapminder %>%
 
 ---
 
+## Reference: `filter()`
+
+Combine multiple expressions with a comma, or `&`:
+
+```{r, eval = FALSE}
+gapminder %>%
+  filter(continent == "Europe" & year == 2007)
+```
+
+Use the `|` operator when you want either-or filtering:
+
+```{r, eval = FALSE}
+gapminder %>%
+  filter(continent == "Europe" | continent == "Americas")
+```
+
+An exclamation point negates something. So to keep all **non-missing observations** you can do:
+
+```{r, eval = FALSE}
+gapminder %>%
+  filter(!is.na(continent))
+```
+
+---
+
+
 ## Mutate to create (or change) variables
 
-- We don't have a GDP variable! Let's create it by multiplying GDP per capita times the population, and save it as a new dataframe.
+- We can use the `mutate()` verb to create or modify variables using all common operations (e.g. adding, subtracting, multiplying, dividing, taking the log). 
+
+- Note that we don't have a GDP variable! Let's create it by multiplying GDP per capita times the population, and save the result as a new dataframe.
 
 ```{r}
 
 df_gdp <- gapminder %>%
   mutate(gdp = pop * gdpPercap)
 
+head(df_gdp)
+
 ```
+---
+
+## Mutate to create (or change) variables
+
 Ok, that's quite big. We could also divide it by 1,000,000 to have it in US$ million, or even take the log!
 
 ```{r}
@@ -405,6 +441,7 @@ df_gdp <- df_gdp %>%
   mutate(gdp_million = gdp / 1000000,
          gdp_log = log(gdp))
 
+head(df_gdp)
 ```
 
 ---
@@ -422,6 +459,10 @@ gapminder %>%
 
 ```
 
+---
+
+## Arrange to sort your dataframes
+
 What about the highest?
 
 ```{r}
@@ -431,8 +472,6 @@ gapminder %>%
   arrange(desc(lifeExp)) %>%
   head(3)
 
-df_2007 <- gapminder %>%
-  filter(year == 2007)
 ```
 
 ---
@@ -462,11 +501,8 @@ gapminder %>%
 
 - But more often, we care about summarizing across groups! This comes up all the time in our work.
 
-- For example, 
-
 ```{r}
-
-df_2007 %>%
+gapminder %>%
   group_by(continent) %>%
   summarize(exp_mean = mean(lifeExp),
             gdp_mean = mean(gdpPercap))
@@ -474,6 +510,29 @@ df_2007 %>%
 ```
 
 - Note that `group_by()` doesn't produce any output, it just groups things in advance of whatever operation comes afterwards (typically, `summarize()`
+
+---
+
+## Your turn to code
+
+- Can you find what was the **mean** and **median GDP per capita** (as well as the **number of obs!**) for **each of the continents in 1982**?
+
+- You have **2 minutes**.
+
+---
+
+## Your turn to code
+
+```{r}
+
+gapminder %>%
+  filter(year == 1982) %>% # Filter to keep only 1982
+  group_by(continent) %>% # Group by continent
+  summarize(mean = mean(gdpPercap), # Calculate each of the summary stats with summarize
+            median = median(gdpPercap),
+            count = n())
+
+```
 
 ---
 
@@ -491,11 +550,67 @@ with `arrange()`)
 - All functions: https://dplyr.tidyverse.org/reference/index.html
 
 ---
+
+## Bonus: Running a regression
+
+- R was designed for statistical computing, so there's a ton of built-in functions for stats work.
+
+- Let's try running a regression. We won't have time to cover this in depth, but it's something most of us will have to do at ideas42.
+
+- Use `lm` to run a linear model and `glm` to run a logit (that stands for Generalized Linear Model). These generate an object you can then save.  
+
+```{r, echo = FALSE}
+df_1982 <- gapminder %>%
+  filter(year == 1982)
+```  
+
+```{r}
+
+my_ols <- lm(lifeExp ~ log(gdpPercap), data = df_1982)
+
+```
+
+---
+
+- The output is similar to what you would see in Stata. You can show it in a table, print it out, export it, and use it for coefficient plots.
+
+```{r}
+
+summary(my_ols)
+
+```
+
+---
+
+## Bonus: Running a regression
+
+.pull-left[
+
+- Why logging, you say?
+
+- It respects the assumptions of the model (linear, additive, etc.).
+
+]
+
+.pull-right[
+
+```{r, echo = FALSE}
+
+gapminder %>%
+  filter(year == 1982) %>%
+  ggplot(aes(log(gdpPercap), lifeExp)) + 
+  geom_point() + 
+  geom_smooth() +
+  theme_ipsum_rc()
+
+```
+
+]
+
+---
 class: inverse middle center
 
 # Plotting
-
-
 ---
 
 ## The grammar of graphics
